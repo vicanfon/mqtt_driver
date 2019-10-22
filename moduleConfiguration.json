@@ -1,0 +1,1 @@
+{"broker":"rabbitmq","userName":"mqtt","platformDomain":"pt.vfos","routingKeys":[],"driver":"mqtt","activation":true}
