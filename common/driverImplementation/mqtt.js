@@ -75,7 +75,7 @@ module.exports = function(loggerCB){
                 if(jsonPath.length>0){
                     message=jp.query(message, jsonPath)[0];
                 }
-                self.data = message;
+                self.data = JSON.stringify(message);
                 callback([JSON.stringify(message), "Good", new Date()]);
               });
               
