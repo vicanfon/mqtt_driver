@@ -74,18 +74,21 @@ module.exports = function(app) {
       }, function(err, models) {
         if (err) throw err;
 
-        console.log('Models created: \n', models);
+        // console.log('Models created: \n', models);
       });
     });
 
     function callback(msg){
-      console.log("Suscribed succesfully");
+      console.log("Suscribed succesfully: "+msg);
     }
 
     app.models.sensorConfiguration.all()
     .then(result => {
+      console.log("result subscription: "+ JSON.stringify(result));
       for (let item in result) {
+        console.log("item: "+item);
         if (result[item].events != null && result[item].events.length > 0) {   
+          console.log("subscribed to sensor:" +result[item]._did+"-"+result[item]._sid);
           app.models.sensor.subscribeSensor(result[item]._did, result[item]._sid, callback);
         }
       };

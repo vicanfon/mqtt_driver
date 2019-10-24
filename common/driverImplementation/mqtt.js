@@ -3,6 +3,7 @@
 // the methods will be used by devices
 
 var mqtt = require("mqtt");
+var jp = require('jsonpath');
 
 module.exports = function(loggerCB){
     
@@ -16,6 +17,7 @@ module.exports = function(loggerCB){
     
     // mandatory methods of the driver. Any developer must code them
     return {
+        data: "not connected",
         /**
          * method called by the Devide Driver SDK when reading a sensor according to the protocol
          * @param {object} sensorConf configuration of a sensor containing the proprietary parameters to connect to a server and read data
@@ -23,7 +25,8 @@ module.exports = function(loggerCB){
          *      @param {string} result string with the value of the sensor data
          */
         readSensorData: async function (deviceConf, sensorConf) {
-            throw ["MQTT doesn't support reading options, you must subscribe", "err", new Date()]
+            // throw ["MQTT doesn't support reading options, you must subscribe", "err", new Date()]
+            return [this.data.toString(), "Good", new Date()];
         },
         /**
          * method called by the Devide Driver SDK when subscribing to changes of a sensor
@@ -32,16 +35,16 @@ module.exports = function(loggerCB){
          *      @param {string} result string with the value of the sensor data
          */
         subscribe: async function (deviceConf, sensorConf, callback) {
+            var self = this;
             // Retrieval of MQTT resourPath and topic
             let resourcePath = deviceConf.propietaryParameters.find( item => item.name == "resourcePath").value;
             let username = deviceConf.propietaryParameters.find( item => item.name == "username").value;
             let password = deviceConf.propietaryParameters.find( item => item.name == "password").value;
             let security = deviceConf.propietaryParameters.find( item => item.name == "security").value;
-            let jsonPath = deviceConf.propietaryParameters.find( item => item.name == "jsonPath").value;
+            let jsonPath = sensorConf.propietaryParameters.find( item => item.name == "jsonPath").value;
             let topic = sensorConf.propietaryParameters.find( item => item.name == "topic").value;
 
             // Create MQTT client
-            
             var options={
                 protocol: 'mqtt'
               }
@@ -55,20 +58,32 @@ module.exports = function(loggerCB){
             // MQTT subscription
             client.on('connect', function(){
                 console.log("Subscribed to "+resourcePath);
-                client.subscribe(topic);
+                client.subscribe(topic,{qos: 2});
                 console.log("Listening to "+topic);
             });
 
+            client.on('reconnect', function(){
+                console.log("Error connecting to MQTT server");
+                client.end();
+                callback(["Error connecting to MQTT server", "Bad", new Date()]);
+            });
 
             client.on('message', function (topic, message) {
                 // message is Buffer
-                var result=message;
+                // var result=message;
+                message=JSON.parse(message);
                 if(jsonPath.length>0){
-                    result=JSON.parse(message);
-                    result=result[jsonPath]
+                    message=jp.query(message, jsonPath)[0];
                 }
-                callback([result.toString(), "Good", new Date()]);
+                self.data = message;
+                callback([JSON.stringify(message), "Good", new Date()]);
               });
+              
+              client.on('error', function (err) {
+                // message is Buffer
+                console.log("error:"+err); 
+              });
+              
               
         },
         /**
@@ -112,7 +127,7 @@ module.exports = function(loggerCB){
             // @param [security_securityMode=MessageSecurityMode.None] {MessageSecurityMode} the default security mode.
             // @param [security_securityPolicy =SecurityPolicy.NONE] {SecurityPolicy} the security mode.
             let device_proprietaryParameters = [["resourcePath","mqtt://m24.cloudmqtt.com:17074"],["username",""],["password",""]];
-            let sensor_proprietaryParameters = [["topic","topic1"],["jsonPath","elem.attr"]];
+            let sensor_proprietaryParameters = [["topic","topic1"],["jsonPath","$..fields[?(@.name=='Pressure')]"]];
 
             return {
                 driver: "mqtt",

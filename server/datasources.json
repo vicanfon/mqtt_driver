@@ -2,7 +2,7 @@
   "io_datasource": {
     "name": "io_datasource",
     "connector": "mongodb",
-    "host": "mongoDriver",
+    "host": "mongoDriver_MQTT",
     "port": 27017,
     "user": "",
     "password": "",

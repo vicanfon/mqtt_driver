@@ -12,6 +12,7 @@ let platformDomain = moduleConfiguration.platformDomain;
 let routingKeys = moduleConfiguration.routingKeys;
 let pubsub = moduleConfiguration.activation;
 let communications;
+let specificDriver = require("../driverImplementation/" + moduleConfiguration.driver)(logger);
 
 if (pubsub){
   communications = new vfosMessagingPubsub(broker, userName, platformDomain, routingKeys);
@@ -177,7 +178,7 @@ sensor.getDataSensor = function (deviceId, sensorId, callback) {
       .then(function (sensorConfig) {
       // 2. It retrieves a specific driver to process the reading on the appropiate protocol according to the sensor
       // it send a logger function to store the logs that will be sent to the platform
-      let specificDriver = require("../driverImplementation/" + sensorConfig[0].driver.protocol)(logger);
+      // let specificDriver = require("../driverImplementation/" + sensorConfig[0].driver.protocol)(logger);
 
       // 3. It uses the driver to make the propietary call to the physical device and receive it in agnostic format
       specificDriver.readSensorData(deviceConfig[0], sensorConfig[0]).then(compute_and_store).catch(function(e){callback(null, {
@@ -247,19 +248,22 @@ sensor.subscribeSensor = function(deviceId, sensorId, callback) {
 
   const sensorConfiguration = this.app.models.sensorConfiguration;
 
-
+  console.log("I arrived to subscribeSensor");
   deviceConf.find({where: {_did: deviceId}, limit: 1}).then(
     function (deviceConfig) {
     sensorConfiguration.find({where: {_did: deviceId, _sid: sensorId}, limit: 1})
     .then(function (sensorConfig) {
+      console.log("sensorConfig: "+JSON.stringify(sensorConfig));
       // Checking if there are triggers so that a subscription can be created
       if (sensorConfig[0].events.length > 0) {
+        console.log("**1**"+sensorConfig[0].driver.protocol);
         // 2. It retrieves a specific driver to process the reading on the appropiate protocol according to the sensor
         // it send a logger function to store the logs that will be sent to the platform
-        let specificDriver = require("../driverImplementation/" + sensorConfig[0].driver.protocol)(logger);
-
+        // let specificDriver = require("../driverImplementation/" + sensorConfig[0].driver.protocol)(logger);
+        console.log("**2**"+JSON.stringify(specificDriver));
         // 3. It uses the driver to make the propietary call to the physical device and receive it in agnostic format
-        specificDriver.subscribe(deviceConfig[0], sensorConfig[0], pushToPlatform).then(()=>{callback(null, "ok")}).catch(function(e){
+        specificDriver.subscribe(deviceConfig[0], sensorConfig[0], pushToPlatform).then(()=>{console.log("**3**");callback(null, "ok")}).catch(function(e){
+          console.log("**4**"+JSON.stringify(e));
           callback(null, {
           _did: sensorConfig[0]._did,
           _sid: sensorConfig[0]._sid,
@@ -328,7 +332,7 @@ sensor.sendCommand = function (deviceId, sensorId, command, callback) {
     .then(function (sensorConfig) {
       // 2. It retrieves a specific driver to process the reading on the appropiate protocol according to the sensor
       // it send a logger function to store the logs that will be sent to the platform
-      let specificDriver = require("../driverImplementation/" + sensorConfig[0].driver.protocol)(logger);
+      // let specificDriver = require("../driverImplementation/" + sensorConfig[0].driver.protocol)(logger);
 
       // 3. It uses the driver to make the propietary call send data to the sensor in agnostic
       specificDriver.sendCommand(deviceConfig[0], sensorConfig[0], command).then(result => callback(null, result)).catch(e=>callback(e.message));
