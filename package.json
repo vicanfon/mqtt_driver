@@ -31,7 +31,7 @@
     "jsonpath": "^1.0.2"
   },
   "devDependencies": {
-    "eslint": "^3.17.1",
+    "eslint": "^4.18.2",
     "eslint-config-loopback": "^8.0.0",
     "jenkins-mocha": "^6.0.0",
     "mocha": "^4.1.0",
